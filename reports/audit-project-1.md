@@ -1,101 +1,101 @@
 ================================
-ARCHITECTURE AUDIT REPORT
+RELATÓRIO DE AUDITORIA DE ARQUITETURA
 ================================
-Project: code-smells-project
+Projeto: code-smells-project
 Stack:   Python + Flask
-Files:   4 analyzed | ~580 lines of code
+Arquivos: 4 analisados | ~580 linhas de código
 
-## Summary
-CRITICAL: 5 | HIGH: 4 | MEDIUM: 3 | LOW: 2
+## Resumo
+CRÍTICO: 5 | ALTO: 4 | MÉDIO: 3 | BAIXO: 2
 
-## Findings
+## Achados
 
-### [CRITICAL] SQL Injection via String Concatenation
-File: models.py:28,47-49,58-60,68,92,109-110,127-128,140,155,158-165,174,188,220,224,280,291-293
-Description: Nearly all SQL queries concatenate user-controlled input instead of using parameterized placeholders.
-Impact: Attackers can inject SQL to bypass authentication, exfiltrate or corrupt data.
-Recommendation: Replace all string-built queries with parameterized statements (? placeholders).
+### [CRÍTICO] SQL Injection por Concatenação de Strings
+Arquivo: models.py:28,47-49,58-60,68,92,109-110,127-128,140,155,158-165,174,188,220,224,280,291-293
+Descrição: Quase todas as queries SQL concatenam entrada controlada pelo usuário em vez de usar placeholders parametrizados.
+Impacto: Atacantes podem injetar SQL para burlar autenticação, exfiltrar ou corromper dados.
+Recomendação: Substituir todas as queries montadas por string por statements parametrizados (placeholders ?).
 
-### [CRITICAL] Unauthenticated Arbitrary SQL Execution
-File: app.py:59-78
-Description: POST /admin/query accepts arbitrary SQL from request body and executes it without authentication.
-Impact: Full database compromise — any client can read, modify or delete all data.
-Recommendation: Remove this endpoint entirely.
+### [CRÍTICO] Execução Arbitrária de SQL sem Autenticação
+Arquivo: app.py:59-78
+Descrição: POST /admin/query aceita SQL arbitrário no corpo da requisição e o executa sem autenticação.
+Impacto: Comprometimento total do banco — qualquer cliente pode ler, modificar ou apagar todos os dados.
+Recomendação: Remover este endpoint completamente.
 
-### [CRITICAL] Plaintext Password Storage and Exposure
-File: models.py:72-87,89-103; controllers.py:128-134; database.py:75-82
-Description: Passwords stored in plaintext; get_todos_usuarios() returns senha field in API responses.
-Impact: Credential theft if database or API is compromised.
-Recommendation: Hash passwords with werkzeug/bcrypt; never return password fields in responses.
+### [CRÍTICO] Armazenamento e Exposição de Senhas em Texto Puro
+Arquivo: models.py:72-87,89-103; controllers.py:128-134; database.py:75-82
+Descrição: Senhas armazenadas em texto puro; get_todos_usuarios() retorna o campo senha nas respostas da API.
+Impacto: Roubo de credenciais se o banco ou a API forem comprometidos.
+Recomendação: Fazer hash das senhas com werkzeug/bcrypt; nunca retornar campos de senha nas respostas.
 
-### [CRITICAL] Hardcoded Secret Key Exposed via Health Endpoint
-File: app.py:7-8; controllers.py:286-289
-Description: SECRET_KEY hardcoded as 'minha-chave-super-secreta-123' and exposed in GET /health response.
-Impact: Session forgery and configuration disclosure to any caller.
-Recommendation: Load secrets from environment; health endpoint returns only non-sensitive status.
+### [CRÍTICO] Chave Secreta Hardcoded Exposta no Endpoint de Health
+Arquivo: app.py:7-8; controllers.py:286-289
+Descrição: SECRET_KEY hardcoded como 'minha-chave-super-secreta-123' e exposta na resposta de GET /health.
+Impacto: Falsificação de sessão e exposição de configuração para qualquer requisitante.
+Recomendação: Carregar segredos de variáveis de ambiente; endpoint de health retorna apenas status não sensível.
 
-### [CRITICAL] Unauthenticated Database Reset
-File: app.py:47-57
-Description: POST /admin/reset-db wipes all tables without authentication.
-Impact: Total data loss and denial of service by any anonymous client.
-Recommendation: Remove endpoint or protect with admin auth and environment guards.
+### [CRÍTICO] Reset de Banco de Dados sem Autenticação
+Arquivo: app.py:47-57
+Descrição: POST /admin/reset-db apaga todas as tabelas sem autenticação.
+Impacto: Perda total de dados e negação de serviço por qualquer cliente anônimo.
+Recomendação: Remover o endpoint ou protegê-lo com autenticação de admin e guards de ambiente.
 
-### [HIGH] God Class — models.py Contains All Domain Logic
-File: models.py:1-314
-Description: Single file contains SQL, business rules, order creation, and sales report logic for 4 domains.
-Impact: Impossible to test in isolation; any change affects entire application.
-Recommendation: Split into models per domain (produto, usuario, pedido).
+### [ALTO] God Class — models.py Contém Toda a Lógica de Domínio
+Arquivo: models.py:1-314
+Descrição: Arquivo único contém SQL, regras de negócio, criação de pedidos e lógica de relatório de vendas para 4 domínios.
+Impacto: Impossível testar em isolamento; qualquer mudança afeta toda a aplicação.
+Recomendação: Separar em models por domínio (produto, usuario, pedido).
 
-### [HIGH] No Authentication or Authorization
-File: app.py:11-30; controllers.py (all handlers)
-Description: No JWT, session, or role checks on sensitive endpoints like GET /usuarios, GET /pedidos, PUT /pedidos/status.
-Impact: Anyone can list users with passwords, view orders, and change order status.
-Recommendation: Implement authentication middleware with role-based access control.
+### [ALTO] Ausência de Autenticação e Autorização
+Arquivo: app.py:11-30; controllers.py (todos os handlers)
+Descrição: Sem JWT, sessão ou verificação de papéis em endpoints sensíveis como GET /usuarios, GET /pedidos, PUT /pedidos/status.
+Impacto: Qualquer pessoa pode listar usuários com senhas, visualizar pedidos e alterar status de pedidos.
+Recomendação: Implementar middleware de autenticação com controle de acesso baseado em papéis.
 
-### [HIGH] Business Logic and Side Effects in Controllers
-File: controllers.py:208-210,247-250
-Description: Controllers contain notification side effects via print() instead of a service layer.
-Impact: Violates SRP; side effects cannot be mocked or swapped in tests.
-Recommendation: Extract notification logic to services/pedido_service.py.
+### [ALTO] Lógica de Negócio e Efeitos Colaterais nos Controllers
+Arquivo: controllers.py:208-210,247-250
+Descrição: Controllers contêm efeitos colaterais de notificação via print() em vez de uma camada de serviço.
+Impacto: Viola o SRP; efeitos colaterais não podem ser mockados ou substituídos em testes.
+Recomendação: Extrair lógica de notificação para services/pedido_service.py.
 
-### [HIGH] Global Singleton Database Connection
-File: database.py:4-11
-Description: Single global db_connection shared across all requests with check_same_thread=False.
-Impact: Race conditions and SQLite lock issues under concurrent load.
-Recommendation: Use Flask g object for per-request connections.
+### [ALTO] Conexão Global Singleton com o Banco de Dados
+Arquivo: database.py:4-11
+Descrição: Única conexão global db_connection compartilhada entre todas as requisições com check_same_thread=False.
+Impacto: Condições de corrida e problemas de lock do SQLite sob carga concorrente.
+Recomendação: Usar o objeto g do Flask para conexões por requisição.
 
-### [MEDIUM] N+1 Query Problem in Order Listing
-File: models.py:171-233
-Description: Separate queries for items and product names inside nested loops per order.
-Impact: Performance degrades linearly with order count.
-Recommendation: Use JOINs to fetch orders with items in a single query.
+### [MÉDIO] Problema de Queries N+1 na Listagem de Pedidos
+Arquivo: models.py:171-233
+Descrição: Queries separadas para itens e nomes de produtos dentro de loops aninhados por pedido.
+Impacto: Performance degrada linearmente com a quantidade de pedidos.
+Recomendação: Usar JOINs para buscar pedidos com itens em uma única query.
 
-### [MEDIUM] Debug Mode and Permissive CORS
-File: app.py:7-9,88
-Description: DEBUG=True, CORS(app) with no origin restrictions, debug=True in production health response.
-Impact: Debug exposes stack traces; open CORS enables cross-origin abuse.
-Recommendation: Load config from environment; separate dev/prod settings.
+### [MÉDIO] Modo Debug e CORS Permissivo
+Arquivo: app.py:7-9,88
+Descrição: DEBUG=True, CORS(app) sem restrição de origens, debug=True na resposta de health em produção.
+Impacto: Debug expõe stack traces; CORS aberto permite abuso cross-origin.
+Recomendação: Carregar configuração de variáveis de ambiente; separar settings de dev/prod.
 
-### [MEDIUM] Broad Exception Handling Exposes Internal Errors
-File: controllers.py (throughout)
-Description: Generic Exception caught and str(e) returned to clients.
-Impact: Leaks SQL errors and internal paths to attackers.
-Recommendation: Register centralized error handlers; return generic messages.
+### [MÉDIO] Tratamento Genérico de Exceções Expõe Erros Internos
+Arquivo: controllers.py (em todo o arquivo)
+Descrição: Exception genérica capturada e str(e) retornado aos clientes.
+Impacto: Vaza erros SQL e caminhos internos para atacantes.
+Recomendação: Registrar error handlers centralizados; retornar mensagens genéricas.
 
-### [LOW] Magic Numbers in Sales Report Discount Logic
-File: models.py:256-262
-Description: Discount thresholds (1000, 5000, 10000) and rates (0.02, 0.05, 0.1) hardcoded inline.
-Impact: Business rules opaque and hard to change.
-Recommendation: Extract to named constants in config/settings.py.
+### [BAIXO] Magic Numbers na Lógica de Desconto do Relatório de Vendas
+Arquivo: models.py:256-262
+Descrição: Limites de desconto (1000, 5000, 10000) e taxas (0.02, 0.05, 0.1) hardcoded inline.
+Impacto: Regras de negócio opacas e difíceis de alterar.
+Recomendação: Extrair para constantes nomeadas em config/settings.py.
 
-### [LOW] Print-Based Logging
-File: controllers.py:8,11,57,106,161,179,208-210,247-250
-Description: Application uses print() for logging and notifications.
-Impact: No log levels, no rotation, unsuitable for production observability.
-Recommendation: Use Python logging module with configurable handlers.
+### [BAIXO] Logging Baseado em print()
+Arquivo: controllers.py:8,11,57,106,161,179,208-210,247-250
+Descrição: Aplicação usa print() para logging e notificações.
+Impacto: Sem níveis de log, sem rotação, inadequado para observabilidade em produção.
+Recomendação: Usar o módulo logging do Python com handlers configuráveis.
 
 ================================
-Total: 14 findings
+Total: 14 achados
 ================================
 
-Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]
+Fase 2 concluída. Prosseguir com a refatoração (Fase 3)? [s/n]
