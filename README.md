@@ -215,5 +215,4 @@ Saída da Fase 2 salva em:
 ## Referências
 
 - [Gemini CLI — Agent Skills](https://geminicli.com/docs/cli/skills/)
-- [Critérios do desafio](criterios.txt)
 - Fork base: `mba-ia-refactor-projects-skill`
